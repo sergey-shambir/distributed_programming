@@ -5,12 +5,23 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Frontend.Models;
+using System.Net;
 using System.Net.Http;
+using System.Text;
 
 namespace Frontend.Controllers
 {
     public class HomeController : Controller
     {
+        const string urlSetValue = "http://127.0.0.1:5000/api/values";
+
+        HttpClient httpClient;
+
+        public HomeController()
+        {
+            this.httpClient = new HttpClient();
+        }
+
         public IActionResult Index()
         {
             return View();
@@ -23,10 +34,17 @@ namespace Frontend.Controllers
         }
 
         [HttpPost]
-        public IActionResult Upload(string data)
+        public async Task<IActionResult> Upload(string data)
         {
-            string id = null; 
-            //TODO: send data in POST request to backend and read returned id value from response
+            ByteArrayContent content = new ByteArrayContent(Encoding.UTF8.GetBytes(data));
+            HttpResponseMessage response = await this.httpClient.PostAsync(urlSetValue, content);
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                throw new Exception("upload failed: unexpected status code " + response.StatusCode.ToString());
+            }
+            string id = await response.Content.ReadAsStringAsync();
+
             return Ok(id);
         }
 
