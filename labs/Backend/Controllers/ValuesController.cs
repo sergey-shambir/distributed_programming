@@ -10,6 +10,12 @@ namespace Backend.Controllers
     [Route("api/[controller]")]
     public class ValuesController : Controller
     {
+
+        public class UploadModel
+        {
+            public string Data;
+        }
+
         static readonly ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>();
 
         // GET api/values/<id>
@@ -23,10 +29,11 @@ namespace Backend.Controllers
 
         // POST api/values
         [HttpPost]
-        public string Post([FromForm]string value)
+        [Consumes("application/json")]
+        public string Post([FromBody]UploadModel model)
         {
             var id = Guid.NewGuid().ToString();
-            _data[id] = value;
+            _data[id] = model.Data;
             return id;
         }
     }

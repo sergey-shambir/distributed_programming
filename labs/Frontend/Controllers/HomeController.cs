@@ -8,6 +8,7 @@ using Frontend.Models;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace Frontend.Controllers
 {
@@ -34,9 +35,12 @@ namespace Frontend.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Upload(string data)
+        public async Task<IActionResult> Upload([FromForm]string data)
         {
-            ByteArrayContent content = new ByteArrayContent(Encoding.UTF8.GetBytes(data));
+            string json = JsonConvert.SerializeObject(new Dictionary<string, string>() {
+                { "data", data }
+            });
+            HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await this.httpClient.PostAsync(urlSetValue, content);
 
             if (response.StatusCode != HttpStatusCode.OK)
