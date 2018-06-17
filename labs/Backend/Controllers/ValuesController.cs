@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Concurrent;
+using StackExchange.Redis;
+using TextLib;
 
 namespace Backend.Controllers
 {
@@ -16,15 +18,19 @@ namespace Backend.Controllers
             public string Data;
         }
 
-        static readonly ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>();
+        private IDatabase _database;
+    
+        public ValuesController()
+        {
+            ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost");
+            this._database = redis.GetDatabase();
+        }
 
         // GET api/values/<id>
         [HttpGet("{id}")]
         public string Get(string id)
         {
-            string value = null;
-            _data.TryGetValue(id, out value);
-            return value;
+            return this._database.StringGet(id);
         }
 
         // POST api/values
@@ -33,7 +39,11 @@ namespace Backend.Controllers
         public string Post([FromBody]UploadModel model)
         {
             var id = Guid.NewGuid().ToString();
-            _data[id] = model.Data;
+            this._database.StringSet(id, model.Data);
+
+            var messages = new TextMessages();
+            messages.SendTextCreated(id);
+
             return id;
         }
     }
