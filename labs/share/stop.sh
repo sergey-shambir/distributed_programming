@@ -14,5 +14,5 @@ killDotNetApp() {
 
 killDotNetApp "Frontend.dll"
 killDotNetApp "Backend.dll"
-killDotNetApp "TextListener.dll"
+killDotNetApp "TextRancCalc.dll"
 echo "done"
