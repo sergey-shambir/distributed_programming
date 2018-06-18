@@ -3,7 +3,7 @@ using System.Threading;
 using StackExchange.Redis;
 using TextLib;
 
-namespace TextListener
+namespace TextRancCalc
 {
     class Program
     {
