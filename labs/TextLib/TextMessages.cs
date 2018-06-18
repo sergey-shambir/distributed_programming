@@ -10,10 +10,12 @@ namespace TextLib
 {
     public class TextMessages
     {
-        const string RabbitMQHost = "localhost";
-        const string QueueBackendApi = "backend-api";
-        const string QueueTextRankTasks = "text-rank-tasks";
-        const string QueueVowelConsCounter = "vowel-cons-counter";
+        public static readonly string RabbitMQHost = "localhost";
+        public static readonly string QueueTextRancCalc = "text-rank-calc";
+        public static readonly string QueueTextListener = "text-listener";
+        public static readonly string QueueTextRankTasks = "text-rank-tasks";
+        public static readonly string QueueVowelConsCounter = "vowel-cons-counter";
+        public static readonly string TextExchange = "text";
 
         private ConnectionFactory _factory;
 
@@ -27,16 +29,16 @@ namespace TextLib
             using(var connection = this._factory.CreateConnection())
             using(var channel = connection.CreateModel())
             {
-                DeclareQueue(channel);
+                DeclareExchanges(channel);
                 var body = Encoding.UTF8.GetBytes(id);
                 channel.ConfirmSelect();
                 channel.BasicReturn += (model, args) => {
                     Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText + ", ReplyCode=" + args.ReplyCode
                     + ", RoutingKey=" + args.RoutingKey + ", Body=" + args.Body);
                 };
-                channel.BasicPublish(exchange: "",
+                channel.BasicPublish(exchange: TextExchange,
                                     mandatory: true,
-                                    routingKey: QueueBackendApi,
+                                    routingKey: "",
                                     basicProperties: null,
                                     body: body);
                 Console.WriteLine("TextCreated published - waiting for confim");
@@ -45,19 +47,19 @@ namespace TextLib
             }
         }
 
-        public void ConsumeTextCreatedInLoop(EventHandler<string> onTextCreated)
+        public void ConsumeTextCreatedInLoop(string queueName, EventHandler<string> onTextCreated)
         {
             using(var connection = this._factory.CreateConnection())
             using(var channel = connection.CreateModel())
             {
-                DeclareQueue(channel);
+                BindQueue(queueName, channel);
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += (model, ea) => {
                     var body = ea.Body;
                     string message = Encoding.UTF8.GetString(body);
                     onTextCreated(model, message);
                 };
-                channel.BasicConsume(queue: QueueBackendApi,
+                channel.BasicConsume(queue: queueName,
                                 autoAck: true,
                                 consumer: consumer);
                                 
@@ -68,14 +70,24 @@ namespace TextLib
             }
         }
 
-        private void DeclareQueue(IModel channel)
+        private void DeclareExchanges(IModel channel)
         {
+            channel.ExchangeDeclare(exchange: TextExchange, type: "fanout");
+        }
+
+        private void BindQueue(string queueName, IModel channel)
+        {
+            DeclareExchanges(channel);
             channel.QueueDeclare(
-                queue: QueueBackendApi,
+                queue: queueName,
                 durable: false,
                 exclusive: false,
                 autoDelete: false,
                 arguments: null);
+            channel.QueueBind(
+                queue: queueName,
+                exchange: TextExchange,
+                routingKey: "");
         }
     }
 }
