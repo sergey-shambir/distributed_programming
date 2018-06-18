@@ -13,10 +13,11 @@ namespace TextLib
         public static readonly string RabbitMQHost = "localhost";
         public static readonly string QueueTextRancCalc = "text-rank-calc";
         public static readonly string QueueTextListener = "text-listener";
-        public static readonly string QueueTextRankTasks = "text-rank-tasks";
         public static readonly string QueueVowelConsCounter = "vowel-cons-counter";
+        public static readonly string QueueVowelConsRater = "vowel-cons-rater";
         public static readonly string ExchangeText = "text";
-        public static readonly string ExchangeVowelConsCount = "vowel-cons-count";
+        public static readonly string ExchangeTextRankTask = "text-rank-task";
+        public static readonly string ExchangeTextScoreTask = "text-score-task";
 
         private ConnectionFactory _factory;
 
@@ -59,7 +60,7 @@ namespace TextLib
                 channel.BasicReturn += (model, args) => {
                     Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText);
                 };
-                channel.BasicPublish(exchange: ExchangeVowelConsCount,
+                channel.BasicPublish(exchange: ExchangeTextScoreTask,
                                     mandatory: true,
                                     routingKey: "",
                                     basicProperties: null,
@@ -96,7 +97,8 @@ namespace TextLib
         private void DeclareExchanges(IModel channel)
         {
             channel.ExchangeDeclare(exchange: ExchangeText, type: "fanout");
-            channel.ExchangeDeclare(exchange: ExchangeVowelConsCount, type: "fanout");
+            channel.ExchangeDeclare(exchange: ExchangeTextScoreTask, type: "fanout");
+            channel.ExchangeDeclare(exchange: ExchangeTextRankTask, type: "fanout");
         }
 
         private void BindQueue(string queueName, string exchange, IModel channel)
