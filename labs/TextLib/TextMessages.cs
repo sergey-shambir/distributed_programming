@@ -116,8 +116,8 @@ namespace TextLib
         private void DeclareExchanges(IModel channel)
         {
             channel.ExchangeDeclare(exchange: ExchangeText, type: "fanout");
-            channel.ExchangeDeclare(exchange: ExchangeTextRankTask, type: "fanout");
-            channel.ExchangeDeclare(exchange: ExchangeTextScoreTask, type: "fanout");
+            channel.ExchangeDeclare(exchange: ExchangeTextRankTask, type: "direct");
+            channel.ExchangeDeclare(exchange: ExchangeTextScoreTask, type: "direct");
         }
 
         private void BindQueue(string queueName, string exchange, IModel channel)
