@@ -1,0 +1,15 @@
+@model ScoreViewModel
+@{
+    ViewData["Title"] = "Data input";
+}
+<div>
+    <h2>Оценка текста</h2>
+    @if (Model.Succeed)
+    {
+        <p>Общая оценка: <span>@Model.Score</span> баллов</p>
+    }
+    else
+    {
+        <p>Ошибка: <span>@Model.ErrorText</span></p>
+    }
+</div>
