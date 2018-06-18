@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Concurrent;
@@ -17,20 +18,17 @@ namespace Backend.Controllers
         {
             public string Data;
         }
-
-        private IDatabase _database;
     
         public ValuesController()
         {
-            ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost");
-            this._database = redis.GetDatabase();
         }
 
         // GET api/values/<id>
         [HttpGet("{id}")]
         public string Get(string id)
         {
-            return this._database.StringGet(id);
+            var repo = new TextRepository();
+            return repo.GetText(id);
         }
 
         // POST api/values
@@ -38,13 +36,28 @@ namespace Backend.Controllers
         [Consumes("application/json")]
         public string Post([FromBody]UploadModel model)
         {
-            var id = Guid.NewGuid().ToString();
-            this._database.StringSet(id, model.Data);
+            var repo = new TextRepository();
+            string id = repo.CreateText(model.Data);
 
             var messages = new TextMessages();
             messages.SendTextCreated(id);
 
             return id;
+        }
+
+        [HttpGet("/api/score/{id}")]
+        public string Score(string id)
+        {
+            Console.WriteLine("score requested for id=" + id);
+            // TODO: remove sleep
+            Thread.Sleep(500);
+
+            var repo = new TextRepository();
+            string score = repo.GetScore(id);
+
+            Console.WriteLine("score for id=" + id + " is " + score);
+
+            return score;
         }
     }
 }

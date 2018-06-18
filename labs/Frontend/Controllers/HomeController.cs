@@ -17,7 +17,8 @@ namespace Frontend.Controllers
     public class HomeController : Controller
     {
         const string urlSetValue = "http://127.0.0.1:5000/api/values";
-        const string urlDetails = "/details";
+        const string urlGetScore = "http://127.0.0.1:5000/api/score/";
+        const string urlDetails = "/Home/Details/";
 
         HttpClient httpClient;
 
@@ -51,9 +52,25 @@ namespace Frontend.Controllers
                 throw new Exception("upload failed: unexpected status code " + response.StatusCode.ToString());
             }
             string id = await response.Content.ReadAsStringAsync();
-            string url = getTextResultsUrl(id);
+            string url = GetTextResultsUrl(id);
 
             return Redirect(url);
+        }
+
+        [HttpGet("/Home/Details/{id}")]
+        public async Task<IActionResult> Details(string id)
+        {
+            Console.WriteLine("requested details for id=" + id);
+            string url = urlGetScore + id;
+            HttpResponseMessage response = await this.httpClient.GetAsync(url);
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                string reason = "failed to get score: status code " + response.StatusCode;
+                return View(new ScoreViewModel { Succeed = false, ErrorText = reason } );
+            }
+
+            string score = await response.Content.ReadAsStringAsync();
+            return View(new ScoreViewModel { Succeed = true, Score = score } );
         }
 
         public IActionResult Error()
@@ -61,16 +78,17 @@ namespace Frontend.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-        private string getTextResultsUrl(string id)
+        private string GetTextResultsUrl(string id)
         {
-            var uriBuilder = new UriBuilder(HttpContext.Request.Scheme + "://" + HttpContext.Request.Host + urlDetails);
-            NameValueCollection query = new NameValueCollection();
-            query["id"] = id;
-            uriBuilder.Query = String.Join("&", query.AllKeys.Select(a => a + "=" + HttpUtility.UrlEncode(query[a])));
-            string url = uriBuilder.ToString();
-            Console.WriteLine("redirect url=" + url);
-
+            string url = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host + urlDetails + id;
             return url;
+        }
+
+        private string AddUrlQuery(string url, NameValueCollection query)
+        {
+            var uriBuilder = new UriBuilder(url);
+            uriBuilder.Query = String.Join("&", query.AllKeys.Select(a => a + "=" + HttpUtility.UrlEncode(query[a])));
+            return uriBuilder.ToString();
         }
     }
 }
