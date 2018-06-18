@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-APPLICATION_NAME=seshserver
+APPLICATION_NAME=rplabs
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DISTRIBUTION_DIR="${SCRIPT_DIR}/${APPLICATION_NAME}-$1"
 
@@ -43,5 +43,6 @@ fi
 
 publish "${SCRIPT_DIR}/Frontend/Frontend.csproj" "$1"
 publish "${SCRIPT_DIR}/Backend/Backend.csproj" "$1"
+publish "${SCRIPT_DIR}/TextListener/TextListener.csproj" "$1"
 publish "${SCRIPT_DIR}/TextRancCalc/TextRancCalc.csproj" "$1"
 cp -r "${SCRIPT_DIR}/share/." "${DISTRIBUTION_DIR}"
