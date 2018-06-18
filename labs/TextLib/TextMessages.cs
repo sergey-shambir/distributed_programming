@@ -10,9 +10,11 @@ namespace TextLib
 {
     public class TextMessages
     {
-        private static readonly string RabbitMQHost = "localhost";
-        private static readonly string QueueTextCreated = "RPTextCreated";
-        
+        const string RabbitMQHost = "localhost";
+        const string QueueBackendApi = "backend-api";
+        const string QueueTextRankTasks = "text-rank-tasks";
+        const string QueueVowelConsCounter = "vowel-cons-counter";
+
         private ConnectionFactory _factory;
 
         public TextMessages()
@@ -34,7 +36,7 @@ namespace TextLib
                 };
                 channel.BasicPublish(exchange: "",
                                     mandatory: true,
-                                    routingKey: QueueTextCreated,
+                                    routingKey: QueueBackendApi,
                                     basicProperties: null,
                                     body: body);
                 Console.WriteLine("TextCreated published - waiting for confim");
@@ -55,7 +57,7 @@ namespace TextLib
                     string message = Encoding.UTF8.GetString(body);
                     onTextCreated(model, message);
                 };
-                channel.BasicConsume(queue: QueueTextCreated,
+                channel.BasicConsume(queue: QueueBackendApi,
                                 autoAck: true,
                                 consumer: consumer);
                                 
@@ -69,7 +71,7 @@ namespace TextLib
         private void DeclareQueue(IModel channel)
         {
             channel.QueueDeclare(
-                queue: QueueTextCreated,
+                queue: QueueBackendApi,
                 durable: false,
                 exclusive: false,
                 autoDelete: false,

@@ -46,18 +46,34 @@ namespace Backend.Controllers
         }
 
         [HttpGet("/api/score/{id}")]
-        public string Score(string id)
+        public async Task<IActionResult> Score(string id)
         {
             Console.WriteLine("score requested for id=" + id);
-            // TODO: remove sleep
-            Thread.Sleep(500);
+
+            int[] repeatIntervalsMsec = {
+                100,
+                200,
+                500,
+                1000
+            };
 
             var repo = new TextRepository();
-            string score = repo.GetScore(id);
-
-            Console.WriteLine("score for id=" + id + " is " + score);
-
-            return score;
+            (string score, bool ok) = repo.GetScore(id);
+            if (ok)
+            {
+                return Ok(score);
+            }
+            foreach (int delay in repeatIntervalsMsec)
+            {
+                Console.WriteLine("score isn't ready, waiting for " + delay + " msec");
+                await Task.Delay(delay);
+                (score, ok) = repo.GetScore(id);
+                if (ok)
+                {
+                    return Ok(score);
+                }
+            }
+            return NotFound();
         }
     }
 }

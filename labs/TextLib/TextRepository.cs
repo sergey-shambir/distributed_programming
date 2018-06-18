@@ -26,9 +26,10 @@ namespace TextLib
             return this._database.HashGet(id, KeyText);
         }
 
-        public string GetScore(string id)
+        public (string, bool) GetScore(string id)
         {
-            return this._database.HashGet(id, KeyScore);
+            var value = this._database.HashGet(id, KeyScore);
+            return (value, !value.IsNullOrEmpty);
         }
 
         public string CreateText(string text)
