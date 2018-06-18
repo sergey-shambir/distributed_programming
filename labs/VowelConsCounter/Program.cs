@@ -15,13 +15,20 @@ namespace VowelConsCounter
 
             Console.WriteLine("Listening for TextCreated event, press Ctrl+C to stop...");
             messages.ConsumeMessagesInLoop(TextMessages.QueueVowelConsCounter, TextMessages.ExchangeTextRankTask, (model, id) => {
-                string text = repo.GetText(id);
-                var count = new VowelConsCount();
-                count.ContextId = id;
-                count.VowelCount = metrics.GetVowelCount(text);
-                count.ConsCount = metrics.GetConsonantsCount(text);
-                messages.SendVowelConsCount(count);
-                Console.WriteLine(id + " vowel count: " + count.VowelCount + ", cons count: " + count.ConsCount);
+                try
+                {
+                    string text = repo.GetText(id);
+                    var count = new VowelConsCount();
+                    count.ContextId = id;
+                    count.VowelCount = metrics.GetVowelCount(text);
+                    count.ConsCount = metrics.GetConsonantsCount(text);
+                    messages.SendTextScoreTask(count);
+                    Console.WriteLine(id + " vowel count: " + count.VowelCount + ", cons count: " + count.ConsCount);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("exception occured: " + ex.ToString());
+                }
             });
         }
     }

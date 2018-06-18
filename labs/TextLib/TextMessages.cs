@@ -42,13 +42,33 @@ namespace TextLib
                                     routingKey: "",
                                     basicProperties: null,
                                     body: body);
-                Console.WriteLine("TextCreated published - waiting for confim");
                 channel.WaitForConfirms();
-                Console.WriteLine("TextCreated confirmed");
+                Console.WriteLine("SendTextCreated confirmed");
+            }
+        }
+        
+        public void SendTextRankTask(string id)
+        {
+            using(var connection = this._factory.CreateConnection())
+            using(var channel = connection.CreateModel())
+            {
+                DeclareExchanges(channel);
+                var body = Encoding.UTF8.GetBytes(id);
+                channel.ConfirmSelect();
+                channel.BasicReturn += (model, args) => {
+                    Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText);
+                };
+                channel.BasicPublish(exchange: ExchangeTextRankTask,
+                                    mandatory: true,
+                                    routingKey: "",
+                                    basicProperties: null,
+                                    body: body);
+                channel.WaitForConfirms();
+                Console.WriteLine("SendTextRankTask confirmed");
             }
         }
 
-        public void SendVowelConsCount(VowelConsCount value)
+        public void SendTextScoreTask(VowelConsCount value)
         {
             using(var connection = this._factory.CreateConnection())
             using(var channel = connection.CreateModel())
@@ -65,9 +85,8 @@ namespace TextLib
                                     routingKey: "",
                                     basicProperties: null,
                                     body: body);
-                Console.WriteLine("TextCreated published - waiting for confim");
                 channel.WaitForConfirms();
-                Console.WriteLine("TextCreated confirmed");
+                Console.WriteLine("SendTextScoreTask confirmed");
             }
         }
 
@@ -97,8 +116,8 @@ namespace TextLib
         private void DeclareExchanges(IModel channel)
         {
             channel.ExchangeDeclare(exchange: ExchangeText, type: "fanout");
-            channel.ExchangeDeclare(exchange: ExchangeTextScoreTask, type: "fanout");
             channel.ExchangeDeclare(exchange: ExchangeTextRankTask, type: "fanout");
+            channel.ExchangeDeclare(exchange: ExchangeTextScoreTask, type: "fanout");
         }
 
         private void BindQueue(string queueName, string exchange, IModel channel)

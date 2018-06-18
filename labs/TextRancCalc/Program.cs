@@ -15,12 +15,7 @@ namespace TextRancCalc
 
             Console.WriteLine("Listening for TextCreated event, press Ctrl+C to stop...");
             messages.ConsumeMessagesInLoop(TextMessages.QueueTextRancCalc, TextMessages.ExchangeText, (model, id) => {
-                string text = repo.GetText(id);
-                float score = metrics.CalculateScore(text);
-                repo.SetTextScore(id, score);
-
-                // TODO: remove echo
-                Console.WriteLine(id + " score: " + score + ", text: '" + text + "'");
+                messages.SendTextRankTask(id);
             });
         }
     }
