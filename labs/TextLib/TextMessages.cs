@@ -15,7 +15,8 @@ namespace TextLib
         public static readonly string QueueTextListener = "text-listener";
         public static readonly string QueueTextRankTasks = "text-rank-tasks";
         public static readonly string QueueVowelConsCounter = "vowel-cons-counter";
-        public static readonly string TextExchange = "text";
+        public static readonly string ExchangeText = "text";
+        public static readonly string ExchangeVowelConsCount = "vowel-cons-count";
 
         private ConnectionFactory _factory;
 
@@ -33,10 +34,9 @@ namespace TextLib
                 var body = Encoding.UTF8.GetBytes(id);
                 channel.ConfirmSelect();
                 channel.BasicReturn += (model, args) => {
-                    Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText + ", ReplyCode=" + args.ReplyCode
-                    + ", RoutingKey=" + args.RoutingKey + ", Body=" + args.Body);
+                    Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText);
                 };
-                channel.BasicPublish(exchange: TextExchange,
+                channel.BasicPublish(exchange: ExchangeText,
                                     mandatory: true,
                                     routingKey: "",
                                     basicProperties: null,
@@ -47,12 +47,35 @@ namespace TextLib
             }
         }
 
-        public void ConsumeTextCreatedInLoop(string queueName, EventHandler<string> onTextCreated)
+        public void SendVowelConsCount(VowelConsCount value)
         {
             using(var connection = this._factory.CreateConnection())
             using(var channel = connection.CreateModel())
             {
-                BindQueue(queueName, channel);
+                DeclareExchanges(channel);
+
+                var body = Encoding.UTF8.GetBytes(value.ToJson());
+                channel.ConfirmSelect();
+                channel.BasicReturn += (model, args) => {
+                    Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText);
+                };
+                channel.BasicPublish(exchange: ExchangeVowelConsCount,
+                                    mandatory: true,
+                                    routingKey: "",
+                                    basicProperties: null,
+                                    body: body);
+                Console.WriteLine("TextCreated published - waiting for confim");
+                channel.WaitForConfirms();
+                Console.WriteLine("TextCreated confirmed");
+            }
+        }
+
+        public void ConsumeMessagesInLoop(string queueName, string exchange, EventHandler<string> onTextCreated)
+        {
+            using(var connection = this._factory.CreateConnection())
+            using(var channel = connection.CreateModel())
+            {
+                BindQueue(queueName, exchange, channel);
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += (model, ea) => {
                     var body = ea.Body;
@@ -72,10 +95,11 @@ namespace TextLib
 
         private void DeclareExchanges(IModel channel)
         {
-            channel.ExchangeDeclare(exchange: TextExchange, type: "fanout");
+            channel.ExchangeDeclare(exchange: ExchangeText, type: "fanout");
+            channel.ExchangeDeclare(exchange: ExchangeVowelConsCount, type: "fanout");
         }
 
-        private void BindQueue(string queueName, IModel channel)
+        private void BindQueue(string queueName, string exchange, IModel channel)
         {
             DeclareExchanges(channel);
             channel.QueueDeclare(
@@ -86,7 +110,7 @@ namespace TextLib
                 arguments: null);
             channel.QueueBind(
                 queue: queueName,
-                exchange: TextExchange,
+                exchange: exchange,
                 routingKey: "");
         }
     }
