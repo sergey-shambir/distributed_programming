@@ -25,12 +25,14 @@ namespace TextLib
 
         public int GetVowelCount(string text)
         {
-            return text.Count(c => RuVowels.Contains(c) || EnVowels.Contains(c));
+            string lower = text.ToLower();
+            return lower.Count(c => RuVowels.Contains(c) || EnVowels.Contains(c));
         }
 
         public int GetConsonantsCount(string text)
         {
-            return text.Count(c => RuConsonants.Contains(c) || EnConsonants.Contains(c));
+            string lower = text.ToLower();
+            return lower.Count(c => RuConsonants.Contains(c) || EnConsonants.Contains(c));
         }
     }
 }
