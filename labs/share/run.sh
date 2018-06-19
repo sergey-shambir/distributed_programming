@@ -30,6 +30,9 @@ runDotNetAppMulti() {
     done
 }
 
+echo "killing existing instances..."
+bash "${SCRIPT_DIR}/stop.sh"
+echo "starting up..."
 mkdir -p "${LOG_DIR}"
 runDotNetApp "Frontend"
 runDotNetApp "Backend"
@@ -37,3 +40,4 @@ runDotNetApp "TextListener"
 runDotNetApp "TextRancCalc"
 runDotNetAppMulti $NumVowelConsRater "VowelConsRater"
 runDotNetAppMulti $NumVowelConsCounter "VowelConsCounter"
+echo "done"
