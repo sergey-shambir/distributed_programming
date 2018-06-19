@@ -18,6 +18,7 @@ namespace TextLib
         public static readonly string ExchangeText = "text";
         public static readonly string ExchangeTextRankTask = "text-rank-task";
         public static readonly string ExchangeTextScoreTask = "text-score-task";
+        public static readonly string ExchangeTextRankCalculated = "text-rank-calculated";
 
         private ConnectionFactory _factory;
 
@@ -32,18 +33,7 @@ namespace TextLib
             using(var channel = connection.CreateModel())
             {
                 DeclareExchanges(channel);
-                var body = Encoding.UTF8.GetBytes(id);
-                channel.ConfirmSelect();
-                channel.BasicReturn += (model, args) => {
-                    Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText);
-                };
-                channel.BasicPublish(exchange: ExchangeText,
-                                    mandatory: true,
-                                    routingKey: "",
-                                    basicProperties: null,
-                                    body: body);
-                channel.WaitForConfirms();
-                Console.WriteLine("SendTextCreated confirmed");
+                this.SendMessage(channel, ExchangeText, id);
             }
         }
         
@@ -53,40 +43,36 @@ namespace TextLib
             using(var channel = connection.CreateModel())
             {
                 DeclareExchanges(channel);
-                var body = Encoding.UTF8.GetBytes(id);
-                channel.ConfirmSelect();
-                channel.BasicReturn += (model, args) => {
-                    Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText);
-                };
-                channel.BasicPublish(exchange: ExchangeTextRankTask,
-                                    mandatory: true,
-                                    routingKey: "",
-                                    basicProperties: null,
-                                    body: body);
-                channel.WaitForConfirms();
-                Console.WriteLine("SendTextRankTask confirmed");
+                this.SendMessage(channel, ExchangeTextRankTask, id);
             }
         }
 
-        public void SendTextScoreTask(VowelConsCount value)
+        public void SendTextScoreTask(string id, int vowelCount, int consCount)
         {
             using(var connection = this._factory.CreateConnection())
             using(var channel = connection.CreateModel())
             {
                 DeclareExchanges(channel);
 
-                var body = Encoding.UTF8.GetBytes(value.ToJson());
-                channel.ConfirmSelect();
-                channel.BasicReturn += (model, args) => {
-                    Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText);
-                };
-                channel.BasicPublish(exchange: ExchangeTextScoreTask,
-                                    mandatory: true,
-                                    routingKey: "",
-                                    basicProperties: null,
-                                    body: body);
-                channel.WaitForConfirms();
-                Console.WriteLine("SendTextScoreTask confirmed");
+                var message = new VowelConsCountMessage();
+                message.ContextId = id;
+                message.VowelCount = vowelCount;
+                message.ConsCount = consCount;
+                this.SendMessage(channel, ExchangeTextScoreTask, message.ToJson());
+            }
+        }
+
+        public void SendTextRankCalculated(string id, float score)
+        {
+            using(var connection = this._factory.CreateConnection())
+            using(var channel = connection.CreateModel())
+            {
+                DeclareExchanges(channel);
+
+                var message = new TextRankCalculatedMessage();
+                message.ContextId = id;
+                message.Score = score;
+                this.SendMessage(channel, ExchangeTextRankCalculated, message.ToJson());
             }
         }
 
@@ -116,6 +102,7 @@ namespace TextLib
         private void DeclareExchanges(IModel channel)
         {
             channel.ExchangeDeclare(exchange: ExchangeText, type: "fanout");
+            channel.ExchangeDeclare(exchange: ExchangeTextRankCalculated, type: "fanout");
             channel.ExchangeDeclare(exchange: ExchangeTextRankTask, type: "direct");
             channel.ExchangeDeclare(exchange: ExchangeTextScoreTask, type: "direct");
         }
@@ -133,6 +120,22 @@ namespace TextLib
                 queue: queueName,
                 exchange: exchange,
                 routingKey: "");
+        }
+
+        private void SendMessage(IModel channel, string exchange, string message)
+        {
+                channel.ConfirmSelect();
+                channel.BasicReturn += (model, args) => {
+                    Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText);
+                };
+                var body = Encoding.UTF8.GetBytes(message);
+                channel.BasicPublish(exchange: exchange,
+                                    mandatory: true,
+                                    routingKey: "",
+                                    basicProperties: null,
+                                    body: body);
+                channel.WaitForConfirms();
+                Console.WriteLine("confirmed message with exchange '" + exchange + "'");
         }
     }
 }
