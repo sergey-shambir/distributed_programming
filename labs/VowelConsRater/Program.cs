@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading;
-using StackExchange.Redis;
 using TextLib;
 
 namespace VowelConsRater
@@ -12,12 +11,14 @@ namespace VowelConsRater
             var messages = new TextMessages();
             var repo = new TextRepository();
 
-            Console.WriteLine("Listening for TextCreated event, press Ctrl+C to stop...");
+            Console.WriteLine("Listening for TextScoreTask event, press Ctrl+C to stop...");
             messages.ConsumeMessagesInLoop(TextMessages.QueueVowelConsRater, TextMessages.ExchangeTextScoreTask, (model, message) => {
-                VowelConsCount count = VowelConsCount.FromJson(message);
+                VowelConsCountMessage count = VowelConsCountMessage.FromJson(message);
+                string id = count.ContextId;
                 float score = (float)count.VowelCount / (float)count.ConsCount;
-                repo.SetTextScore(count.ContextId, score);
-                Console.WriteLine(count.ContextId + " score: " + score);
+                repo.SetTextScore(id, score);
+                Console.WriteLine(id + " score: " + score);
+                messages.SendTextRankCalculated(id, score);
             });
         }
     }

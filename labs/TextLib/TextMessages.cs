@@ -15,6 +15,7 @@ namespace TextLib
         public static readonly string QueueTextListener = "text-listener";
         public static readonly string QueueVowelConsCounter = "vowel-cons-counter";
         public static readonly string QueueVowelConsRater = "vowel-cons-rater";
+        public static readonly string QueueTextStatistics = "text-statistics";
         public static readonly string ExchangeText = "text";
         public static readonly string ExchangeTextRankTask = "text-rank-task";
         public static readonly string ExchangeTextScoreTask = "text-score-task";

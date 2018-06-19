@@ -18,12 +18,10 @@ namespace VowelConsCounter
                 try
                 {
                     string text = repo.GetText(id);
-                    var count = new VowelConsCount();
-                    count.ContextId = id;
-                    count.VowelCount = metrics.GetVowelCount(text);
-                    count.ConsCount = metrics.GetConsonantsCount(text);
-                    messages.SendTextScoreTask(count);
-                    Console.WriteLine(id + " vowel count: " + count.VowelCount + ", cons count: " + count.ConsCount);
+                    int vowelCount = metrics.GetVowelCount(text);
+                    int consCount = metrics.GetConsonantsCount(text);
+                    messages.SendTextScoreTask(id, vowelCount, consCount);
+                    Console.WriteLine(id + " vowel count: " + vowelCount + ", cons count: " + consCount);
                 }
                 catch (Exception ex)
                 {
