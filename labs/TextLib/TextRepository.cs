@@ -9,39 +9,69 @@ namespace TextLib
 {
     public class TextRepository
     {
+        const int DatabaseCount = 4;
 
         const string KeyText = "text";
         const string KeyScore = "score";
 
-        private IDatabase _database;
+        private ConnectionMultiplexer _redis;
+        private IDatabase[] _databases = new IDatabase[DatabaseCount];
 
         public TextRepository()
         {
-            ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost");
-            this._database = redis.GetDatabase();
+            this._redis = ConnectionMultiplexer.Connect("localhost");
         }
 
         public string GetText(string id)
         {
-            return this._database.HashGet(id, KeyText);
+            return this.GetDatabase(id).HashGet(id, KeyText);
         }
 
         public (string, bool) GetScore(string id)
         {
-            var value = this._database.HashGet(id, KeyScore);
+            var value = this.GetDatabase(id).HashGet(id, KeyScore);
             return (value, !value.IsNullOrEmpty);
         }
 
         public string CreateText(string text)
         {
             var id = Guid.NewGuid().ToString();
-            this._database.HashSet(id, KeyText, text);
+            this.GetDatabase(id).HashSet(id, KeyText, text);
             return id;
         }
 
         public void SetTextScore(string id, float score)
         {
-            this._database.HashSet(id, KeyScore, score.ToString());
+            this.GetDatabase(id).HashSet(id, KeyScore, score.ToString());
+        }
+
+        // GetDatabase - returns database instance which must be used for given context id.
+        private IDatabase GetDatabase(string id)
+        {
+            uint hash = this.GetHashFNV1(id);
+            int index = (int)(hash % _databases.Length);
+            if (this._databases[index] == null)
+            {
+                this._databases[index] = this._redis.GetDatabase(index);
+            }
+            Console.WriteLine("selected database #" + index + " for '" + id + "'");
+            return this._databases[index];
+        }
+
+        // GetHashFNV1 - calculates hash using FNV1 algorithm
+        // FNV1 provides stable hash which doesn't depend on runtime environment.
+        private uint GetHashFNV1(string value)
+        {
+            const uint offsetFNV1 = 2166136261;
+            const uint primeFNV1 = 16777619;
+            uint hash = offsetFNV1;
+            byte[] bytes = Encoding.UTF8.GetBytes(value);
+            foreach (byte b in bytes)
+            {
+                hash = hash * primeFNV1;
+                hash = hash ^ b;
+            }
+            return hash;
         }
     }
 }
