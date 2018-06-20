@@ -49,7 +49,23 @@ namespace Backend.Controllers
         public async Task<IActionResult> Score(string id)
         {
             Console.WriteLine("score requested for id=" + id);
+            var repo = new TextRepository();
+            return await RepeatLoad(() => {
+                return repo.GetScore(id);
+            });
+        }
 
+        [HttpGet("/api/statistics")]
+        public IActionResult Statistics()
+        {
+            Console.WriteLine("statistics requested");
+            var repo = new TextRepository();
+            string json = repo.GetStatsReport();
+            return Ok(json);
+        }
+
+        private async Task<IActionResult> RepeatLoad(Func<(string, bool)> load)
+        {
             int[] repeatIntervalsMsec = {
                 100,
                 200,
@@ -57,20 +73,19 @@ namespace Backend.Controllers
                 1000
             };
 
-            var repo = new TextRepository();
-            (string score, bool ok) = repo.GetScore(id);
+            (string result, bool ok) = load();
             if (ok)
             {
-                return Ok(score);
+                return Ok(result);
             }
             foreach (int delay in repeatIntervalsMsec)
             {
-                Console.WriteLine("score isn't ready, waiting for " + delay + " msec");
+                Console.WriteLine("result isn't ready, waiting for " + delay + " msec");
                 await Task.Delay(delay);
-                (score, ok) = repo.GetScore(id);
+                (result, ok) = load();
                 if (ok)
                 {
-                    return Ok(score);
+                    return Ok(result);
                 }
             }
             return NotFound();

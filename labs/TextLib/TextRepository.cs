@@ -14,6 +14,8 @@ namespace TextLib
         const string KeyText = "text";
         const string KeyScore = "score";
 
+        const string KeyStatistics = "stat-7da79c95-0a1b-4062-8325-8419d667f9a0";
+
         private ConnectionMultiplexer _redis;
         private IDatabase[] _databases = new IDatabase[DatabaseCount];
 
@@ -33,6 +35,13 @@ namespace TextLib
             return (value, !value.IsNullOrEmpty);
         }
 
+        public string GetStatsReport()
+        {
+            string id = KeyStatistics;
+            var value = this.GetDatabase(id).StringGet(id);
+            return value;
+        }
+
         public string CreateText(string text)
         {
             var id = Guid.NewGuid().ToString();
@@ -43,6 +52,12 @@ namespace TextLib
         public void SetTextScore(string id, float score)
         {
             this.GetDatabase(id).HashSet(id, KeyScore, score.ToString());
+        }
+
+        public void SetStatsReport(string json)
+        {
+            string id = KeyStatistics;
+            this.GetDatabase(id).StringSet(id, json);
         }
 
         // GetDatabase - returns database instance which must be used for given context id.

@@ -10,11 +10,13 @@ namespace TextStatistics
         {
             var messages = new TextMessages();
             var repo = new TextRepository();
+            var stats = new TextStatsReport();
 
             Console.WriteLine("Listening for TextScoreTask event, press Ctrl+C to stop...");
             messages.ConsumeMessagesInLoop(TextMessages.QueueTextStatistics, TextMessages.ExchangeTextRankCalculated, (model, json) => {
                 TextRankCalculatedMessage message = TextRankCalculatedMessage.FromJson(json);
-                // TODO: implement statistics builder
+                stats.AddRankResult(message.Score);
+                repo.SetStatsReport(stats.ToJson());
             });
         }
     }
