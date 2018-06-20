@@ -2,14 +2,17 @@
 @{
     ViewData["Title"] = "Data input";
 }
-<div>
-    <h2>Оценка текста</h2>
-    @if (Model.Succeed)
-    {
+@if (Model.Succeed)
+{
+    <div>
+        <h2>Оценка текста</h2>
         <p>Общая оценка: <span>@Model.Score</span> баллов</p>
-    }
-    else
-    {
-        <p>Ошибка: <span>@Model.ErrorText</span></p>
-    }
-</div>
+    </div>
+}
+else
+{
+    <div>
+        <h2>Ошибка</h2>
+        <p>Не удалось получить оценку текста: <span>@Model.ErrorText</span></p>
+    </div>
+}

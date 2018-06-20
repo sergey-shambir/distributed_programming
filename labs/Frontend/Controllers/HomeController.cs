@@ -20,11 +20,11 @@ namespace Frontend.Controllers
         const string urlGetScore = "http://127.0.0.1:5000/api/score/";
         const string urlDetails = "/Home/Details/";
 
-        HttpClient httpClient;
+        HttpClient _httpClient;
 
         public HomeController()
         {
-            this.httpClient = new HttpClient();
+            this._httpClient = new HttpClient();
         }
 
         public IActionResult Index()
@@ -45,7 +45,7 @@ namespace Frontend.Controllers
                 { "data", data }
             });
             HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await this.httpClient.PostAsync(urlSetValue, content);
+            HttpResponseMessage response = await this._httpClient.PostAsync(urlSetValue, content);
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
@@ -62,10 +62,10 @@ namespace Frontend.Controllers
         {
             Console.WriteLine("requested details for id=" + id);
             string url = urlGetScore + id;
-            HttpResponseMessage response = await this.httpClient.GetAsync(url);
+            HttpResponseMessage response = await this._httpClient.GetAsync(url);
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                string reason = "failed to get score: status code " + response.StatusCode;
+                string reason = "HTTP status code " + response.StatusCode;
                 return View(new ScoreViewModel { Succeed = false, ErrorText = reason } );
             }
 

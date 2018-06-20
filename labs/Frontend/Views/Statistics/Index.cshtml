@@ -1,0 +1,23 @@
+@{
+    ViewData["Title"] = "Text Statistics";
+}
+
+@if (Model.Succeed)
+{
+    <div>
+        <h2>Статистика обработки текстов</h2>
+        <ol>
+            <li>Общее количество текстов: <span>@Model.Report.TextNum</span> баллов</li>
+            <li>Количество текстов с оценкой выше 0.5: <span>@Model.Report.HighRankPart</span></li>
+            <li>Средняя оценка: <span>@Model.Report.AvgRank</span></li>
+        </ol>
+    </div>
+}
+else
+{
+    <div>
+        <h2>Ошибка</h2>
+        <p>Не удалось получить оценку текста:</p>
+        <pre>@Model.ErrorText</pre>
+    </div>
+}
