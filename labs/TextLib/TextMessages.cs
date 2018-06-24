@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Newtonsoft.Json;
 
 namespace TextLib
 {
@@ -16,7 +17,10 @@ namespace TextLib
         public static readonly string QueueVowelConsCounter = "vowel-cons-counter";
         public static readonly string QueueVowelConsRater = "vowel-cons-rater";
         public static readonly string QueueTextStatistics = "text-statistics";
+        public static readonly string QueueTextProcessingLimiter = "text-statistics";
         public static readonly string ExchangeText = "text";
+
+        public static readonly string ExchangeProcessingAccepted = "text-processing-accepted";
         public static readonly string ExchangeTextRankTask = "text-rank-task";
         public static readonly string ExchangeTextScoreTask = "text-score-task";
         public static readonly string ExchangeTextRankCalculated = "text-rank-calculated";
@@ -35,6 +39,20 @@ namespace TextLib
             {
                 DeclareExchanges(channel);
                 this.SendMessage(channel, ExchangeText, id);
+            }
+        }
+
+        public void SendProcessingAccepted(string id, bool accepted)
+        {
+            using(var connection = this._factory.CreateConnection())
+            using(var channel = connection.CreateModel())
+            {
+                DeclareExchanges(channel);
+                this.SendMessage(channel, ExchangeProcessingAccepted, id);
+                var message = new TextProcessingAcceptedMessage();
+                message.ContextId = id;
+                message.Accepted = accepted;
+                this.SendMessage(channel, ExchangeProcessingAccepted, message.ToJson());
             }
         }
         
@@ -103,6 +121,7 @@ namespace TextLib
         private void DeclareExchanges(IModel channel)
         {
             channel.ExchangeDeclare(exchange: ExchangeText, type: "fanout");
+            channel.ExchangeDeclare(exchange: ExchangeProcessingAccepted, type: "fanout");
             channel.ExchangeDeclare(exchange: ExchangeTextRankCalculated, type: "fanout");
             channel.ExchangeDeclare(exchange: ExchangeTextRankTask, type: "direct");
             channel.ExchangeDeclare(exchange: ExchangeTextScoreTask, type: "direct");

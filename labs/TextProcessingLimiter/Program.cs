@@ -2,7 +2,7 @@
 using System.Threading;
 using TextLib;
 
-namespace TextRancCalc
+namespace TextProcessingLimiter
 {
     class Program
     {
@@ -13,13 +13,11 @@ namespace TextRancCalc
             var metrics = new TextMetrics();
 
             Console.WriteLine("Listening for TextCreated event, press Ctrl+C to stop...");
-            messages.ConsumeMessagesInLoop(TextMessages.QueueTextRancCalc, TextMessages.ExchangeProcessingAccepted, (model, json) => {
-                var message = TextProcessingAcceptedMessage.FromJson(json);
-                if (message.Accepted)
-                {
-                    messages.SendTextRankTask(message.ContextId);
-                }
+            messages.ConsumeMessagesInLoop(TextMessages.QueueTextProcessingLimiter, TextMessages.ExchangeText, (model, id) => {
+                // TODO: <sergey.shambir> implement limiting
+                messages.SendProcessingAccepted(id, accepted);
             });
         }
     }
 }
+
