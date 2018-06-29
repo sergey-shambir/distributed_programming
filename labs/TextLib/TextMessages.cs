@@ -17,13 +17,16 @@ namespace TextLib
         public static readonly string QueueVowelConsCounter = "vowel-cons-counter";
         public static readonly string QueueVowelConsRater = "vowel-cons-rater";
         public static readonly string QueueTextStatistics = "text-statistics";
-        public static readonly string QueueTextProcessingLimiter = "text-statistics";
+        public static readonly string QueueTextProcessingLimiter = "text-processing-limiter";
+        public static readonly string QueueTextProcessingLimiterRevoke = "text-processing-limiter-revoke";
+        public static readonly string QueueTextSuccessMarker = "text-success-marker";
         public static readonly string ExchangeText = "text";
 
         public static readonly string ExchangeProcessingAccepted = "text-processing-accepted";
         public static readonly string ExchangeTextRankTask = "text-rank-task";
         public static readonly string ExchangeTextScoreTask = "text-score-task";
         public static readonly string ExchangeTextRankCalculated = "text-rank-calculated";
+        public static readonly string ExchangeTextSuccessMarked = "text-success-marked";
 
         private ConnectionFactory _factory;
 
@@ -48,11 +51,23 @@ namespace TextLib
             using(var channel = connection.CreateModel())
             {
                 DeclareExchanges(channel);
-                this.SendMessage(channel, ExchangeProcessingAccepted, id);
                 var message = new TextProcessingAcceptedMessage();
                 message.ContextId = id;
                 message.Accepted = accepted;
                 this.SendMessage(channel, ExchangeProcessingAccepted, message.ToJson());
+            }
+        }
+
+        public void SendTextSuccessMarked(string id, bool isTextSuccessful)
+        {
+            using(var connection = this._factory.CreateConnection())
+            using(var channel = connection.CreateModel())
+            {
+                DeclareExchanges(channel);
+                var message = new TextSuccessMarkedMessage();
+                message.ContextId = id;
+                message.Success = isTextSuccessful;
+                this.SendMessage(channel, ExchangeTextSuccessMarked, message.ToJson());
             }
         }
         
@@ -95,7 +110,7 @@ namespace TextLib
             }
         }
 
-        public void ConsumeMessagesInLoop(string queueName, string exchange, EventHandler<string> onTextCreated)
+        public void ConsumeMessagesInLoop(string queueName, string exchange, EventHandler<string> callback)
         {
             using(var connection = this._factory.CreateConnection())
             using(var channel = connection.CreateModel())
@@ -103,9 +118,10 @@ namespace TextLib
                 BindQueue(queueName, exchange, channel);
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += (model, ea) => {
+                    Console.WriteLine("consume message with exchange '" + exchange + "' on queue '" + queueName + "'");
                     var body = ea.Body;
                     string message = Encoding.UTF8.GetString(body);
-                    onTextCreated(model, message);
+                    callback(model, message);
                 };
                 channel.BasicConsume(queue: queueName,
                                 autoAck: true,
@@ -123,6 +139,7 @@ namespace TextLib
             channel.ExchangeDeclare(exchange: ExchangeText, type: "fanout");
             channel.ExchangeDeclare(exchange: ExchangeProcessingAccepted, type: "fanout");
             channel.ExchangeDeclare(exchange: ExchangeTextRankCalculated, type: "fanout");
+            channel.ExchangeDeclare(exchange: ExchangeTextSuccessMarked, type: "fanout");
             channel.ExchangeDeclare(exchange: ExchangeTextRankTask, type: "direct");
             channel.ExchangeDeclare(exchange: ExchangeTextScoreTask, type: "direct");
         }
@@ -144,18 +161,19 @@ namespace TextLib
 
         private void SendMessage(IModel channel, string exchange, string message)
         {
-                channel.ConfirmSelect();
-                channel.BasicReturn += (model, args) => {
-                    Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText);
-                };
-                var body = Encoding.UTF8.GetBytes(message);
-                channel.BasicPublish(exchange: exchange,
-                                    mandatory: true,
-                                    routingKey: "",
-                                    basicProperties: null,
-                                    body: body);
-                channel.WaitForConfirms();
-                Console.WriteLine("confirmed message with exchange '" + exchange + "'");
+            channel.ConfirmSelect();
+            channel.BasicReturn += (model, args) => {
+                Console.WriteLine("message returned:" + args.ToString() + ", ReplyText=" + args.ReplyText);
+            };
+            var body = Encoding.UTF8.GetBytes(message);
+            Console.WriteLine("will send message with exchange '" + exchange + "'");
+            channel.BasicPublish(exchange: exchange,
+                                mandatory: true,
+                                routingKey: "",
+                                basicProperties: null,
+                                body: body);
+            channel.WaitForConfirms();
+            Console.WriteLine("confirmed message with exchange '" + exchange + "'");
         }
     }
 }

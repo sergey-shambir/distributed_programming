@@ -13,7 +13,7 @@ namespace VowelConsCounter
             var repo = new TextRepository();
             var metrics = new TextMetrics();
 
-            Console.WriteLine("Listening for TextCreated event, press Ctrl+C to stop...");
+            Console.WriteLine("Listening for ExchangeTextRankTask event, press Ctrl+C to stop...");
             messages.ConsumeMessagesInLoop(TextMessages.QueueVowelConsCounter, TextMessages.ExchangeTextRankTask, (model, id) => {
                 try
                 {
