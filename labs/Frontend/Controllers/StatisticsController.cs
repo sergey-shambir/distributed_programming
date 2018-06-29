@@ -34,14 +34,13 @@ namespace Frontend.Controllers
             try
             {
                 HttpResponseMessage response = await this._httpClient.GetAsync(urlGetStatistics);
-                if (response.StatusCode != HttpStatusCode.OK)
+                if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    string reason = "HTTP status code " + response.StatusCode;
-                    throw new Exception(reason);
+                    string textResponse = await response.Content.ReadAsStringAsync();
+                    var report = TextStatsReport.FromJson(textResponse);
+                    return View(new TextStatisticsModel{ Succeed = true, Report = report });
                 }
-                string json = await response.Content.ReadAsStringAsync();
-                var report = TextStatsReport.FromJson(json);
-                return View(new TextStatisticsModel{ Succeed = true, Report = report });
+                return View(new TextStatisticsModel{ Succeed = false, ErrorText = "HTTP status code " + response.StatusCode});
             }
             catch (Exception ex)
             {

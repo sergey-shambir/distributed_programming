@@ -126,12 +126,31 @@ namespace TextLib
                 channel.BasicConsume(queue: queueName,
                                 autoAck: true,
                                 consumer: consumer);
-                                
                 while (true)
                 {
                     Thread.Sleep(Timeout.Infinite);
                 }
             }
+        }
+
+        public IConnection CreateConnection()
+        {
+            return this._factory.CreateConnection();
+        }
+
+        public void ListenMessages(IModel channel, string queueName, string exchange, EventHandler<string> callback)
+        {
+            BindQueue(queueName, exchange, channel);
+            var consumer = new EventingBasicConsumer(channel);
+            consumer.Received += (model, ea) => {
+                Console.WriteLine("consume message with exchange '" + exchange + "' on queue '" + queueName + "'");
+                var body = ea.Body;
+                string message = Encoding.UTF8.GetString(body);
+                callback(model, message);
+            };
+            channel.BasicConsume(queue: queueName,
+                            autoAck: true,
+                            consumer: consumer);
         }
 
         private void DeclareExchanges(IModel channel)

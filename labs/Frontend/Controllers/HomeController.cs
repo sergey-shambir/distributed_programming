@@ -63,14 +63,17 @@ namespace Frontend.Controllers
             Console.WriteLine("requested details for id=" + id);
             string url = urlGetScore + id;
             HttpResponseMessage response = await this._httpClient.GetAsync(url);
-            if (response.StatusCode != HttpStatusCode.OK)
+            if (response.StatusCode == HttpStatusCode.OK)
             {
-                string reason = "HTTP status code " + response.StatusCode;
-                return View(new ScoreViewModel { Succeed = false, ErrorText = reason } );
+                string score = await response.Content.ReadAsStringAsync();
+                return View(new ScoreViewModel { Succeed = true, Score = score } );
             }
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                return View(new ScoreViewModel{ Succeed = false, ErrorText = "text processing limit exceed"});
+            }
+            return View(new ScoreViewModel{ Succeed = false, ErrorText = "HTTP status code " + response.StatusCode});
 
-            string score = await response.Content.ReadAsStringAsync();
-            return View(new ScoreViewModel { Succeed = true, Score = score } );
         }
 
         public IActionResult Error()

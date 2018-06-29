@@ -13,6 +13,7 @@ namespace TextLib
 
         const string KeyText = "text";
         const string KeyScore = "score";
+        const string KeyStatus = "status";
 
         const string KeyStatistics = "stat-7da79c95-0a1b-4062-8325-8419d667f9a0";
 
@@ -29,10 +30,20 @@ namespace TextLib
             return this.GetDatabase(id).HashGet(id, KeyText);
         }
 
-        public (string, bool) GetScore(string id)
+        public TextStatus GetTextStatus(string id)
+        {
+            string value = this.GetDatabase(id).HashGet(id, KeyStatus);
+            if (value == null)
+            {
+                return TextStatus.Pending;
+            }
+            return (TextStatus)Enum.Parse(typeof(TextStatus), value, true);
+        }
+
+        public string GetScore(string id)
         {
             var value = this.GetDatabase(id).HashGet(id, KeyScore);
-            return (value, !value.IsNullOrEmpty);
+            return value;
         }
 
         public string GetStatsReport()
@@ -45,13 +56,20 @@ namespace TextLib
         public string CreateText(string text)
         {
             var id = Guid.NewGuid().ToString();
-            this.GetDatabase(id).HashSet(id, KeyText, text);
+            var db = this.GetDatabase(id);
+            db.HashSet(id, KeyText, text);
+            db.HashSet(id, KeyStatus, TextStatus.Pending.ToString());
             return id;
         }
 
         public void SetTextScore(string id, float score)
         {
             this.GetDatabase(id).HashSet(id, KeyScore, score.ToString());
+        }
+
+        public void SetTextStatus(string id, TextStatus status)
+        {
+            this.GetDatabase(id).HashSet(id, KeyStatus, status.ToString());
         }
 
         public void SetStatsReport(string json)

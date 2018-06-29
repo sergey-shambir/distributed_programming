@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Concurrent;
 using StackExchange.Redis;
@@ -51,8 +52,24 @@ namespace Backend.Controllers
             Console.WriteLine("score requested for id=" + id);
             var repo = new TextRepository();
             return await RepeatLoad(() => {
-                return repo.GetScore(id);
+                switch (repo.GetTextStatus(id))
+                {
+                    case TextStatus.Ready:
+                        return Ok(repo.GetScore(id));
+                    case TextStatus.Rejected:
+                        return StatusCode((int)HttpStatusCode.Forbidden);
+                    default:
+                        return null;
+                }
             });
+        }
+
+        [HttpGet("/api/status/{id}")]
+        public IActionResult Status(string id)
+        {
+            Console.WriteLine("status requested for id=" + id);
+            var repo = new TextRepository();
+            return Ok(repo.GetTextStatus(id).ToString());
         }
 
         [HttpGet("/api/statistics")]
@@ -64,28 +81,29 @@ namespace Backend.Controllers
             return Ok(json);
         }
 
-        private async Task<IActionResult> RepeatLoad(Func<(string, bool)> load)
+        private async Task<IActionResult> RepeatLoad(Func<IActionResult> load)
         {
             int[] repeatIntervalsMsec = {
                 100,
                 200,
                 500,
-                1000
+                1000,
+                2000
             };
 
-            (string result, bool ok) = load();
-            if (ok)
+            IActionResult result = load();
+            if (result != null)
             {
-                return Ok(result);
+                return result;
             }
             foreach (int delay in repeatIntervalsMsec)
             {
                 Console.WriteLine("result isn't ready, waiting for " + delay + " msec");
                 await Task.Delay(delay);
-                (result, ok) = load();
-                if (ok)
+                result = load();
+                if (result != null)
                 {
-                    return Ok(result);
+                    return result;
                 }
             }
             return NotFound();
